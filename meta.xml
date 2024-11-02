@@ -1,0 +1,17 @@
+<meta>
+    <script src="useful/*.lua" type="client" cache="false"/>
+    <script src="timecyc.lua" type="client" cache="false"/>
+
+
+
+    <script src="ui/*.lua" type="client" cache="false"/>
+    <script src="pipeline/*.lua" type="client" cache="false"/>
+    <script src="main.lua" type="client" cache="false"/>
+
+
+    <file src="font/*.ttf" type="client"/>
+    <file src="data/*.dat" type="client"/>
+    <file src="shader/*.fx" type="client"/>
+    <include resource="dgs" />
+    <include resource="freecam" />
+</meta>
