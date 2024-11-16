@@ -4,8 +4,8 @@
 Building = class()
 
 function Building:init()
-    self.buildingPS = dxCreateShader("shader/buildingPS.fx",0,0,false)
-    self.neonPS = dxCreateShader("shader/leedsneon.fx",0,0,false) 
+    self.buildingPS = dxCreateShader("shader/buildingPS.fx",0,0,false,"world")
+    self.neonPS = dxCreateShader("shader/leedsneon.fx",0,0,false,"world") 
 
     -- init shader
     self:initShader()
@@ -14,7 +14,7 @@ function Building:init()
     self.ambient = {0,0,0}
     self.gDayNightBalance = 1
     self.gWetRoadEffect = 0
-    self.dayparam = {0,0,0,0}
+    self.dayparam = {0,0,0,1}
     self.nightparam = {1,1,1,1}
     self.noExtraColors = false
 end
@@ -39,7 +39,7 @@ end
 
 function Building:setAmbient(amb_r,amb_g,amb_b,light_multi)
     light_multi = light_multi or 1
-    self.ambient = {amb_r * light_multi /255,amb_g * light_multi /255,amb_b * light_multi /255}
+    self.ambient = {amb_r *light_multi /255,amb_g *light_multi /255,amb_b*light_multi /255}
 
 end
 

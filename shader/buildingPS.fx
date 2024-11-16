@@ -1,8 +1,8 @@
 #include "mta-helper.fx"
 
 float3 ambient = float3(0.1,0.1,0.1);
-float4 dayparam = float4(1,1,1,1);
-float4 nightparam = float4(0,0,0,0);
+float4 dayparam = float4(0,0,0,1);
+float4 nightparam = float4(0,0,0,1);
 float3 surfProps = float3(16.0f, 0.0, 0.0);
 
 texture tex < string textureState="0,Texture"; >;
@@ -39,13 +39,16 @@ PSInput VertexShaderFunction(VSInput VS)
     //PS.Texcoord0.xy = mul(gTexMatrix, float4(VS.TexCoord, 0.0, 1.0)).xy;
 
     // Calculate day/night color transition
-    PS.Color = VS.DayColor * dayparam + VS.NightColor * nightparam;
+    PS.Color = VS.DayColor * dayparam + VS.NightColor * nightparam ;
 
     // Apply material color and scaling
     //PS.Color *= gMaterialColor / gShaderParams.x;
+    //PS.Color = PS.Color / surfProps.x;
 
     // Add ambient lighting
     PS.Color.rgb += ambient * 128.0/255.0;
+
+    //PS.Color = PS.Color *  128.0/255;
 
     // Calculate fog factor
     //PS.Texcoord0.z = clamp((PS.Position.w - gFogData.y) * gFogData.z, gFogData.w, 1.0);

@@ -199,7 +199,7 @@ function PostEffects:doBlurOverlay(intensity, offset, color)
     
     -- Draw final result to screen
     dxSetRenderTarget()
-    dxDrawImage(0, 0, screenW, screenH, resultRT)
+    dxDrawImage(0, 0, screenW, screenH, resultRT, 0, 0, 0, tocolor(255,255,255,blendIntensity))
     
     -- Store result for next effect
     self.lastEffect = resultRT
