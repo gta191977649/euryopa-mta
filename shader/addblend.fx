@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------
 // addBlend settings
 //---------------------------------------------------------------------
-texture src;
+texture sTex0 : TEX0;
 
 
 //------------------------------------------------------------------------------------------
@@ -17,11 +17,10 @@ technique addblend
 {
     pass P0
     {
-        SrcBlend			= 14; //  D3DBLEND_BLENDFACTOR
+        SrcBlend			= SRCALPHA;
         DestBlend			= ONE;
-        BLENDOP          = 3; //D3DBLENDOP_REVSUBTRACT
 
         // Set up texture stage 0
-        Texture[0] = src;
+        Texture[0] = sTex0;
     }
 }

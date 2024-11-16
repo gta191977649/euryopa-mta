@@ -26,7 +26,7 @@ function Timecyc:init(timecycPath, game)
     self.currentWeather = 1
     self.currentData = nil
     self.nextData = nil
-
+    self.dayNightBalance = 0
 
     -- turn of SA effect
     setWorldSpecialPropertyEnabled ("coronaztest", false )
@@ -34,6 +34,7 @@ function Timecyc:init(timecycPath, game)
     resetFarClipDistance()
     resetColorFilter()
     setColorFilter(0,0,0, 0, 0, 0,0, 0 )
+    setCloudsEnabled (false)
 end
 
 function Timecyc:loadTimecycFile()
@@ -123,6 +124,28 @@ end
 function Timecyc:getValue(type)
     return 
 end
+
+function Timecyc:updateDayNightBalance(currentHour, currentMinute)
+    local minute = currentHour * 60.0 + currentMinute
+    local morningStart = 6 * 60.0
+    local morningEnd = 7 * 60.0
+    local eveningStart = 20 * 60.0
+    local eveningEnd = 21 * 60.0
+
+    -- 1.0 is night, 0.0 is day
+    if minute < morningStart then
+        self.dayNightBalance = 1.0
+    elseif minute < morningEnd then
+        self.dayNightBalance = (morningEnd - minute) / (morningEnd - morningStart)
+    elseif minute < eveningStart then
+        self.dayNightBalance = 0.0
+    elseif minute < eveningEnd then
+        self.dayNightBalance = 1.0 - (eveningEnd - minute) / (eveningEnd - eveningStart)
+    else
+        self.dayNightBalance = 1.0
+    end
+end
+
 function Timecyc:update(weatherID, time, minute)
     -- Adjust weatherID and map timeIndex to account for GTA's indexing and circular hour mapping
     weatherID = weatherID + 1  -- Increment since GTA starts weather ID at 0
@@ -144,58 +167,73 @@ function Timecyc:update(weatherID, time, minute)
         return
     end
 
+    
     -- Calculate interpolation factors
     local fa = 1 - (minute / 60.0)
     local fb = minute / 60.0
     -- Interpolate ambient color
-    local ambient = self:interpolateRGB(self.currentData.Amb, self.nextData.Amb, fa, fb)
-    setWorldProperty("AmbientColor", ambient[1], ambient[2], ambient[3])
-
+    self.ambient = self:interpolateRGB(self.currentData.Amb, self.nextData.Amb, fa, fb)
+    --iprint(ambient)
+    setWorldProperty("AmbientColor", self.ambient[1], self.ambient[2], self.ambient[3])
+   
     -- Interpolate ambient object color
-    local ambient_obj = self:interpolateRGB(self.currentData.Amb_Obj, self.nextData.Amb_Obj, fa, fb)
-    setWorldProperty("AmbientObjColor", ambient_obj[1], ambient_obj[2], ambient_obj[3])
+    self.ambient_obj = self:interpolateRGB(self.currentData.Amb_Obj, self.nextData.Amb_Obj, fa, fb)
+    setWorldProperty("AmbientObjColor", self.ambient_obj[1], self.ambient_obj[2], self.ambient_obj[3])
 
     -- Interpolate directional color
-    local directional = self:interpolateRGB(self.currentData.Dir, self.nextData.Dir, fa, fb)
-    setWorldProperty("DirectionalColor", directional[1], directional[2], directional[3])
+    self.directional = self:interpolateRGB(self.currentData.Dir, self.nextData.Dir, fa, fb)
+    setWorldProperty("DirectionalColor", self.directional[1], self.directional[2], self.directional[3])
 
     -- Interpolate sky gradient
-    local skyTop = self:interpolateRGB(self.currentData.Sky_top, self.nextData.Sky_top, fa, fb)
-    local skyBot = self:interpolateRGB(self.currentData.Sky_bot, self.nextData.Sky_bot, fa, fb)
-    setSkyGradient(skyTop[1], skyTop[2], skyTop[3], skyBot[1], skyBot[2], skyBot[3])
+    self.skyTop = self:interpolateRGB(self.currentData.Sky_top, self.nextData.Sky_top, fa, fb)
+    self.skyBot = self:interpolateRGB(self.currentData.Sky_bot, self.nextData.Sky_bot, fa, fb)
+    setSkyGradient(self.skyTop[1], self.skyTop[2], self.skyTop[3], self.skyBot[1], self.skyBot[2], self.skyBot[3])
 
     -- Interpolate cloud colors
-    local cloudTop = self:interpolateRGB(self.currentData.TopCloudRGB, self.nextData.TopCloudRGB, fa, fb)
-    setWorldProperty("BottomCloudsColor", cloudTop[1], cloudTop[2], cloudTop[3])
+    self.cloudTop = self:interpolateRGB(self.currentData.TopCloudRGB, self.nextData.TopCloudRGB, fa, fb)
+    setWorldProperty("BottomCloudsColor", self.cloudTop[1], self.cloudTop[2], self.cloudTop[3])
 
     -- local cloudBot = self:interpolateRGB(currentData.BottomCloudRGB, nextData.BottomCloudRGB, fa, fb)
     -- setWorldProperty("BottomCloudsColor", cloudBot[1], cloudBot[2], cloudBot[3])
 
-    local cloudLow = self:interpolateRGB(self.currentData.LowCloudsRGB, self.nextData.LowCloudsRGB, fa, fb)
-    setWorldProperty("LowCloudsColor", cloudLow[1], cloudLow[2], cloudLow[3])
+    self.cloudLow = self:interpolateRGB(self.currentData.LowCloudsRGB, self.nextData.LowCloudsRGB, fa, fb)
+    setWorldProperty("LowCloudsColor", self.cloudLow[1], self.cloudLow[2], self.cloudLow[3])
 
     -- Interpolate sun colors
-    local sunCore = self:interpolateRGB(self.currentData.SunCore, self.nextData.SunCore, fa, fb)
-    local sunCorona = self:interpolateRGB(self.currentData.SunCorona, self.nextData.SunCorona, fa, fb)
-    setSunColor(sunCore[1], sunCore[2], sunCore[3], sunCorona[1], sunCorona[2], sunCorona[3])
+    self.sunCore = self:interpolateRGB(self.currentData.SunCore, self.nextData.SunCore, fa, fb)
+    self.sunCorona = self:interpolateRGB(self.currentData.SunCorona, self.nextData.SunCorona, fa, fb)
+    setSunColor(self.sunCore[1], self.sunCore[2], self.sunCore[3], self.sunCorona[1], self.sunCorona[2], self.sunCorona[3])
 
     -- Interpolate sun size
-    local sunSize = self:interpolateValue(self.currentData.SunSz, self.nextData.SunSz, fa, fb)
-    setSunSize(sunSize)
+    self.sunSize = self:interpolateValue(self.currentData.SunSz, self.nextData.SunSz, fa, fb)
+    setSunSize(self.sunSize)
 
     -- Interpolate other properties
     --setWorldProperty("SpriteBrightness", self:interpolateValue(currentData.SprBght, nextData.SprBght, fa, fb))
-    setWorldProperty("LightsOnGround", self:interpolateValue(self.currentData.LightOnGround, self.nextData.LightOnGround, fa, fb))
+    self.lightOnGround = self:interpolateValue(self.currentData.LightOnGround, self.nextData.LightOnGround, fa, fb)
+    setWorldProperty("LightsOnGround",self.lightOnGround )
     setWorldProperty("ShadowStrength", self:interpolateValue(self.currentData.LightShd, self.nextData.LightShd, fa, fb))
     setWorldProperty("PoleShadowStrength", self:interpolateValue(self.currentData.PoleShd, self.nextData.PoleShd, fa, fb))
     
     setFarClipDistance(self:interpolateValue(self.currentData.FarClp, self.nextData.FarClp, fa, fb))
     setFogDistance(self:interpolateValue(self.currentData.FogSt, self.nextData.FogSt, fa, fb))
+    -- water color
+    self.waterRGBA = self:interpolateRGBA(self.currentData.WaterRGBA, self.nextData.WaterRGBA, fa, fb)
+    setWaterColor(self.waterRGBA[1],self.waterRGBA[2],self.waterRGBA[3],self.waterRGBA[4])
 
-    -- radiocity
-    -- local radiosityIntensity = self:interpolateValue(currentData.radiosityIntensity, nextData.radiosityIntensity, fa, fb)
-    -- local radiosityLimit = self:interpolateValue(currentData.radiosityLimit, nextData.radiosityLimit, fa, fb)
-    -- --doRadiosity(radiosityLimit, 2, 1, radiosityIntensity)
+    -- radiosity
+    self.radiosityLimit = self:interpolateValue(self.currentData.radiosityLimit, self.nextData.radiosityLimit, fa, fb)
+    self.radiosityIntensity = self:interpolateValue(self.currentData.radiosityIntensity, self.nextData.radiosityIntensity, fa, fb)
+    
+    -- color filter & blur
+    self.colorFilterRGB = self:interpolateRGB(self.currentData.BlurRGB, self.nextData.BlurRGB, fa, fb)
+    self.blurAlpha = self:interpolateValue(self.currentData.blurAlpha, self.nextData.blurAlpha, fa, fb)
+    self.blurOffset = self:interpolateValue(self.currentData.blurOffset, self.nextData.blurOffset, fa, fb)
+
+
+    -- update day & night cycle param
+    self:updateDayNightBalance(time, minute)
+    -- update weather id
     self.currentWeather = weatherID
 end
 

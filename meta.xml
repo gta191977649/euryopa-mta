@@ -1,4 +1,5 @@
 <meta>
+    <script src="config.lua" type="client" cache="false"/>
     <script src="useful/*.lua" type="client" cache="false"/>
     <script src="timecyc.lua" type="client" cache="false"/>
 
